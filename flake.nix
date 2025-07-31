@@ -29,15 +29,6 @@
         "aarch64-darwin"
       ];
 
-      imports =
-        let
-          inherit (builtins)
-            readDir
-            attrNames
-            ;
-        in
-        map (n: ./. + "/modules/${n}") (attrNames (readDir ./modules));
-
       perSystem =
         {
           pkgs,
@@ -78,8 +69,6 @@
               fd '.*\.sh' . -x shellcheck {} \;
             '';
           };
-
-          systemLib = import (self + "/lib/system.nix") everything;
         };
 
       flake = {
