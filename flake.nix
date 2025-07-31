@@ -15,6 +15,7 @@
   outputs =
     inputs@{
       self,
+      nixpkgs,
       flake-parts,
       ...
     }:
@@ -81,8 +82,15 @@
           systemLib = import (self + "/lib/system.nix") everything;
         };
 
-      flake.lib = import (self + "/lib") {
-        inherit inputs self top;
+      flake = {
+        lib = import (self + "/lib") {
+          inherit (nixpkgs) lib;
+        };
+
+        nixosModules = import (self + "/nixos") {
+          inherit self;
+          inherit (nixpkgs) lib;
+        };
       };
     });
 }
