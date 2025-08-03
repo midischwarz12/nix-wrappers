@@ -56,6 +56,12 @@ in
           description = "Package being wrapped";
         };
 
+        name = mkOption {
+          type = str;
+          description = "Package name";
+          default = "${config.basePackage.name}-wrapped";
+        };
+
         executable = mkOption {
           type = str;
           description = "File to be executed";
@@ -70,7 +76,7 @@ in
           readOnly = true;
           default =
             pkgs.symlinkJoin {
-              name = "${config.basePackage.name}-hjemWrapped";
+              inherit (config) name;
               paths = [ config.basePackage ] ++ config.extraPackages;
               nativeBuildInputs = [ pkgs.makeWrapper ];
               postBuild =
