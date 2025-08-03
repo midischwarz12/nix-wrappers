@@ -59,7 +59,7 @@ On a per package basis, Nix-Wrappers can:
   {
     inputs = {
       # Add `wrappers` to inputs
-      wrappers.url = "https://codeberg.org/midischwarz12/wrappers";
+      wrappers.url = "https://codeberg.org/midischwarz12/nix-wrappers";
     };
 
     outputs =
