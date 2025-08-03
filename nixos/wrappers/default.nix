@@ -1,14 +1,13 @@
 { pkgs, lib, ... }:
 
-let
-  inherit (lib.attrsets) attrsToList;
-  inherit (lib.options) mkOption;
-  inherit (lib.strings) optionalString;
-  inherit (lib.types) attrsOf bool listOf nullOr package path str submodule;
-  inherit (builtins) foldl';
-in
 {
   options = let
+    inherit (lib.attrsets) attrsToList;
+    inherit (lib.options) mkOption;
+    inherit (lib.strings) optionalString;
+    inherit (lib.types) attrsOf bool listOf nullOr package path str submodule;
+    inherit (builtins) foldl';
+
     environmentType = submodule {
       options = {
         value = mkOption {
