@@ -1,5 +1,5 @@
 { self, ... }:
 
 {
-  imports = [ self.nixosModules.wrappers ];
+  imports = [ ../wrappers ];
 }
