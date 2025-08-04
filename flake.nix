@@ -76,7 +76,7 @@
           inherit (nixpkgs) lib;
         };
 
-        nixosModules = import (self + "/nixos") {
+        nixosModules = import (self + "/modules") {
           inherit self;
           inherit (nixpkgs) lib;
         };
