@@ -10,8 +10,8 @@
 let
   inherit (self.lib) ls;
 
-  modules = ls (self + "/nixos");
+  modules = ls (self + "/modules");
 
-  genModule = module: { imports = [ (self + "/nixos/${module}") ]; };
+  genModule = module: { imports = [ (self + "/modules/${module}") ]; };
 in
 lib.genAttrs modules genModule
