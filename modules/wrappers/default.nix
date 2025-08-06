@@ -1,11 +1,15 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
+let
+  cfg = config.wrappers;
+in
 {
   options = let
     inherit (lib.attrsets) attrsToList;
-    inherit (lib.options) mkOption;
+    inherit (lib.options) mkOption mkEnableOption;
     inherit (lib.strings) optionalString;
     inherit (lib.types) attrsOf bool listOf nullOr package path str submodule;
+    inherit (lib.modules) mkIf;
     inherit (builtins) foldl';
 
     environmentType = submodule {
@@ -109,6 +113,14 @@
             };
         };
 
+        users = mkOption {
+          type = listOf str;
+          default = [];
+          example = [ "johnsmith" "root" ];
+        };
+
+        systemWide = mkEnableOption "system-wide installation";
+
         directory = mkOption {
           type = nullOr path;
           default = null;
@@ -155,5 +167,21 @@
       example = {};
       description = "Wrappers to be managed by Hjem.";
     };
+  };
+
+  config = let
+    inherit (lib.attrsets) attrValues filterAttrs foldAttrs genAttrs mapAttrs;
+    inherit (lib.lists) elem unique;
+  in
+  {
+    environment.systemPackages = attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg));
+
+    users.users = let
+      uniqFoldAttrs = f: attrs: unique (foldAttrs (a: acc: acc ++ (f a) [] attrs));
+      users = uniqFoldAttrs (wrapper: wrapper.users) cfg;
+      userFilterWrappers = user: filterAttrs (_: v: elem user v.users) cfg;
+      userPackages = user: uniqFoldAttrs (wrapper: [ wrapper.finalPackage ]) (userFilterWrappers user);
+    in
+    genAttrs users userPackages;
   };
 }
