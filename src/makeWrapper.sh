@@ -1,5 +1,9 @@
 #! @bash@
 
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025 midischwarz12
+
+
 usage() {
     read -r -d '' usage << EOF
 Construct an executable file that wraps the actual executable
