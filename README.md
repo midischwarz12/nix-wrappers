@@ -155,3 +155,10 @@ Or to add a wrapper to a package list:
 ```
 
 Full documentation will be generated for all the available options soonTM.
+
+## Roadmap
+
+- Thorough documentation with examples
+- More installation methods
+- Nix function for return wrappers
+- Nix-Wrappers CLI tool
