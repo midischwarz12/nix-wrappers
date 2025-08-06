@@ -177,7 +177,7 @@ in
     environment.systemPackages = attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg));
 
     users.users = let
-      uniqFoldAttrs = f: attrs: unique (foldAttrs (a: acc: acc ++ (f a) [] attrs));
+      uniqFoldAttrs = f: attrs: unique (foldAttrs (a: acc: acc ++ (f a)) [] attrs);
       users = uniqFoldAttrs (wrapper: wrapper.users) cfg;
       userFilterWrappers = user: filterAttrs (_: v: elem user v.users) cfg;
       userPackages = user: uniqFoldAttrs (wrapper: [ wrapper.finalPackage ]) (userFilterWrappers user);
