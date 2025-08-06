@@ -4,7 +4,7 @@ let
   inherit (inputs) nixpkgs;
 in
 stdenv.mkDerivation {
-  name = "wrapper";
+  name = "wrapProgram";
   src = self + "/src";
 
   dontConfigure = true;
