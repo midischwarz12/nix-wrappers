@@ -13,8 +13,6 @@ let
 
   packages' = ls (self + "/packages");
 
-  genPackage =
-    package:
-    pkgs.callPackage (self + "/packages/${package}") everything;
+  genPackage = package: pkgs.callPackage (self + "/packages/${package}") everything;
 in
 lib.genAttrs packages' genPackage

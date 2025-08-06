@@ -1,4 +1,10 @@
-{ stdenv, self, inputs, bash, ... }:
+{
+  stdenv,
+  self,
+  inputs,
+  bash,
+  ...
+}:
 
 let
   inherit (inputs) nixpkgs;
