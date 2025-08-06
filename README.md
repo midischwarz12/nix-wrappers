@@ -49,6 +49,55 @@ On a per package basis, Nix-Wrappers can:
 
 ## Getting Started
 
+### CLI Tool
+
+<details>
+  <summary>Flake (Current recommendation):</summary>
+
+  In your flake.nix, add the following to inputs, outputs' arguments, and your
+  NixOS configurations' modules.
+
+  ```nix
+  {
+    inputs = {
+      # Add `wrappers` to inputs
+      wrappers = {
+        type = "git";
+        url = "https://codeberg.org/midischwarz12/nix-wrappers";
+      };
+    };
+  }
+  ```
+
+  *Remember to `nix flake update wrappers`*
+
+  And then consume it whatever way you see fit whether devShell,
+  nixosConfiguration, etc.
+</details>
+
+<details>
+  <summary>Ad hoc with `nix shell` or `nix run`:</summary>
+
+  With `nix run`:
+
+  ```console
+  $ nix run 'git+https://codeberg.org/midischwarz12/nix-wrappers' -- <args>
+  ...
+  ```
+  
+  With `nix shell`:
+
+  ```console
+  $ nix shell 'git+https://codeberg.org/midischwarz12/nix-wrappers'
+  $ wrapProgram <exec> -- <args>
+  ...
+  ```
+
+  Or run with makeWrapper.
+</details>
+
+### NixOS Module
+
 <details>
   <summary>Flake (Current recommendation):</summary>
 
@@ -81,6 +130,8 @@ On a per package basis, Nix-Wrappers can:
       }
   }
   ```
+
+  *Remember to `nix flake update wrappers`*
 </details>
 
 <details>
@@ -108,6 +159,73 @@ On a per package basis, Nix-Wrappers can:
 </details>
 
 ## Usage
+
+### CLI Tool
+
+#### `makeWrapper`
+
+```console
+$ makeWrapper <exec> <out-path> <args>
+```
+
+Where args are:
+
+- --argv0        NAME    : set the name of the executed process to NAME
+-                          (if unset or empty, defaults to EXECUTABLE)
+- --inherit-argv0        : the executable inherits argv0 from the wrapper.
+-                          (use instead of --argv0 '$0')
+- --resolve-argv0        : if argv0 doesn't include a / character, resolve it against PATH
+- --set          VAR VAL : add VAR with value VAL to the executable's environment
+- --set-default  VAR VAL : like --set, but only adds VAR if not already set in
+-                          the environment
+- --unset        VAR     : remove VAR from the environment
+- --chdir        DIR     : change working directory (use instead of --run "cd DIR")
+- --run          COMMAND : run command before the executable
+- --add-flag     ARG     : prepend the single argument ARG to the invocation of the executable
+-                          (that is, *before* any arguments passed on the command line)
+- --append-flag  ARG     : append the single argument ARG to the invocation of the executable
+-                          (that is, *after* any arguments passed on the command line)
+- --add-flags    ARGS    : prepend ARGS verbatim to the Bash-interpreted invocation of the executable
+- --append-flags ARGS    : append ARGS verbatim to the Bash-interpreted invocation of the executable
+- 
+- --prefix          ENV SEP VAL   : suffix/prefix ENV with VAL, separated by SEP
+- --suffix
+- --prefix-each     ENV SEP VALS  : like --prefix, but VALS is a list
+- --suffix-each     ENV SEP VALS  : like --suffix, but VALS is a list
+- --prefix-contents ENV SEP FILES : like --suffix-each, but contents of FILES
+-                                   are read first and used as VALS
+- --suffix-contents
+
+#### `wrapProgram`
+
+```console
+$ wrapProgram <exec> <args>
+```
+
+Where args are:
+
+- --set          VAR VAL : add VAR with value VAL to the executable's environment
+- --set-default  VAR VAL : like --set, but only adds VAR if not already set in
+-                          the environment
+- --unset        VAR     : remove VAR from the environment
+- --chdir        DIR     : change working directory (use instead of --run "cd DIR")
+- --run          COMMAND : run command before the executable
+- --add-flag     ARG     : prepend the single argument ARG to the invocation of the executable
+-                          (that is, *before* any arguments passed on the command line)
+- --append-flag  ARG     : append the single argument ARG to the invocation of the executable
+-                          (that is, *after* any arguments passed on the command line)
+- --add-flags    ARGS    : prepend ARGS verbatim to the Bash-interpreted invocation of the executable
+- --append-flags ARGS    : append ARGS verbatim to the Bash-interpreted invocation of the executable
+- 
+- --prefix          ENV SEP VAL   : suffix/prefix ENV with VAL, separated by SEP
+- --suffix
+- --prefix-each     ENV SEP VALS  : like --prefix, but VALS is a list
+- --suffix-each     ENV SEP VALS  : like --suffix, but VALS is a list
+- --prefix-contents ENV SEP FILES : like --suffix-each, but contents of FILES
+-                                   are read first and used as VALS
+- --suffix-contents
+
+### NixOS Module
 
 In your NixOS configuration, add the following:
 
@@ -161,4 +279,3 @@ Full documentation will be generated for all the available options soonTM.
 - Thorough documentation with examples
 - More installation methods
 - Nix function for return wrappers
-- Nix-Wrappers CLI tool

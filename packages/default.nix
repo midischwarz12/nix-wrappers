@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2025 midischwarz12
 
-{
-  inputs',
-  inputs,
-  self',
+everything@{
   self,
-  top,
   lib,
   pkgs,
   ...
@@ -19,14 +15,6 @@ let
 
   genPackage =
     package:
-    pkgs.callPackage (self + "/packages/${package}") {
-      inherit
-        inputs'
-        inputs
-        self'
-        self
-        top
-        ;
-    };
+    pkgs.callPackage (self + "/packages/${package}") everything;
 in
 lib.genAttrs packages' genPackage
