@@ -2,6 +2,7 @@
 
 let
   cfg = config.wrappers;
+  inherit (lib.modules) mkIf;
 in
 {
   options = let
@@ -9,7 +10,6 @@ in
     inherit (lib.options) mkOption mkEnableOption;
     inherit (lib.strings) optionalString;
     inherit (lib.types) attrsOf bool listOf nullOr package path str submodule;
-    inherit (lib.modules) mkIf;
     inherit (builtins) foldl';
 
     environmentType = submodule {
@@ -170,18 +170,17 @@ in
   };
 
   config = let
-    inherit (lib.attrsets) attrValues filterAttrs foldAttrs genAttrs mapAttrs;
-    inherit (lib.lists) elem unique;
+    inherit (lib.attrsets) attrValues filterAttrs genAttrs mapAttrs;
+    inherit (lib.lists) elem;
+    inherit (builtins) foldl';
   in
   {
     environment.systemPackages = attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg));
 
     users.users = let
-      uniqFoldAttrs = f: attrs: unique (foldAttrs (a: acc: acc ++ (f a)) [] attrs);
-      users = uniqFoldAttrs (wrapper: wrapper.users) cfg;
-      userFilterWrappers = user: filterAttrs (_: v: elem user v.users) cfg;
-      userPackages = user: uniqFoldAttrs (wrapper: [ wrapper.finalPackage ]) (userFilterWrappers user);
+      users = foldl' (acc: x: acc ++ x) [] (attrValues (mapAttrs (_: v: v.users) cfg));
+      userPackages = user: attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: elem user v.user) cfg));
     in
-    genAttrs users userPackages;
+    mkIf (users != []) (genAttrs users userPackages);
   };
 }
