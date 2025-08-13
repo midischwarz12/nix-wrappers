@@ -205,9 +205,11 @@ in
       inherit (builtins) foldl';
     in
     {
-      environment.systemPackages = attrValues (
-        mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
-      );
+      environment.systemPackages = let
+        packages = attrValues (
+          mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
+        );
+      in mkIf (packages != []) packages;
 
       users.users =
         let
