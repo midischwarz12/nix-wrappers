@@ -10,7 +10,7 @@
 
 let
   cfg = config.wrappers;
-  inherit (lib.modules) mkIf;
+  inherit (lib.modules) mkIf mkMerge;
 in
 {
   options =
@@ -194,29 +194,33 @@ in
     };
 
   config =
-    let
-      inherit (lib.attrsets)
-        attrValues
-        filterAttrs
-        genAttrs
-        mapAttrs
-        ;
-      inherit (lib.lists) elem;
-      inherit (builtins) foldl';
-    in
-    {
+  let
+    inherit (lib.attrsets)
+      attrValues
+      filterAttrs
+      genAttrs
+      mapAttrs
+      ;
+    inherit (lib.lists) elem;
+    inherit (builtins) foldl';
+  in
+  mkMerge [
+    (mkIf (lib.hasAttrByPath [ "environment" "systemPackages" ] config) {
       environment.systemPackages = let
         packages = attrValues (
           mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
         );
       in mkIf (packages != []) packages;
+    })
 
+    (mkIf (lib.hasAttrByPath [ "users" "users" ] config) {
       users.users =
         let
           users = foldl' (acc: x: acc ++ x) [ ] (attrValues (mapAttrs (_: v: v.users) cfg));
           userPackages =
             user: attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: elem user v.user) cfg));
         in
-        mkIf (users != [ ]) (genAttrs users userPackages);
-    };
+        mkIf (users != []) (genAttrs users userPackages);
+    })
+  ];
 }
