@@ -1,17 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (c) 2025 midischwarz12
 
+_:
 {
   pkgs,
   lib,
-  config,
   ...
 }:
 
-let
-  cfg = config.wrappers;
-  inherit (lib.modules) mkIf mkMerge;
-in
 {
   options =
     let
@@ -132,6 +128,7 @@ in
               };
             };
 
+            # No-op when not on NixOS
             users = mkOption {
               type = listOf str;
               default = [ ];
@@ -141,6 +138,7 @@ in
               ];
             };
 
+            # No-op when not on NixOS
             systemWide = mkEnableOption "system-wide installation";
 
             directory = mkOption {
@@ -192,35 +190,4 @@ in
         description = "Wrappers to be managed by Hjem.";
       };
     };
-
-  config =
-  let
-    inherit (lib.attrsets)
-      attrValues
-      filterAttrs
-      genAttrs
-      mapAttrs
-      ;
-    inherit (lib.lists) elem;
-    inherit (builtins) foldl';
-  in
-  mkMerge [
-    (mkIf (lib.hasAttrByPath [ "environment" "systemPackages" ] config) {
-      environment.systemPackages = let
-        packages = attrValues (
-          mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
-        );
-      in mkIf (packages != []) packages;
-    })
-
-    (mkIf (lib.hasAttrByPath [ "users" "users" ] config) {
-      users.users =
-        let
-          users = foldl' (acc: x: acc ++ x) [ ] (attrValues (mapAttrs (_: v: v.users) cfg));
-          userPackages =
-            user: attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: elem user v.user) cfg));
-        in
-        mkIf (users != []) (genAttrs users userPackages);
-    })
-  ];
 }
