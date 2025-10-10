@@ -1,6 +1,20 @@
 <svg viewBox="0 0 1024 1024" width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+    path, rect {
+      fill: black;
+    }
+    @media (prefers-color-scheme: dark) {
+      path, rect {
+        fill: white;
+      }
+    }
+  </style>
+
   <!-- LOGOMARK -->
-  <path fill="white" d="
+  <path d="
     M 181,466
     L 108,409
     C 102,404 98,407 100,414
@@ -12,7 +26,7 @@
     C 98,597 102,600 108,595
     L 181,535
     Z" />
-  <path fill="white" d="
+  <path d="
     M 334,466
     L 407,409
     C 413,404 417,407 415,414
@@ -24,10 +38,10 @@
     C 417,597 413,600 407,595
     L 334,535
     Z" />
-  <rect fill="white" x="180" y="435" width="155" height="135" rx="30" />
+  <rect x="180" y="435" width="155" height="135" rx="30" />
 
   <!-- N -->
-  <path fill="white" d="
+  <path d="
     M 467,371
     L 507,371
     L 583,482
@@ -41,7 +55,7 @@
     Z" />
 
   <!-- I -->
-  <path fill="white" d="
+  <path d="
     M 653,371
     L 689,371
     L 689,539
@@ -49,7 +63,7 @@
     Z" />
 
   <!-- X -->
-  <path fill="white" d="
+  <path d="
     M 716,371
     L 756,371
     L 868,539
@@ -62,7 +76,7 @@
     Z" />
 
   <!-- W -->
-  <path fill="white" d="
+  <path d="
     M 467,577
     L 480,577
     L 489,610
@@ -79,7 +93,7 @@
     Z" />
 
   <!-- R -->
-  <path fill="white" fill-rule="evenodd" d="
+  <path fill-rule="evenodd" d="
     M 552,577
     L 579,577
     C 590,577 605,600 583,610
@@ -98,7 +112,7 @@
     Z" />
 
   <!-- A -->
-  <path fill="white" d="
+  <path d="
     M 604,631
     L 624,577
     L 638,577
@@ -107,7 +121,7 @@
     L 631,590
     L 616,631
     Z" />
-  <path fill="white" d="
+  <path d="
     M 616,611
     L 646,611
     L 646,621
@@ -115,7 +129,7 @@
     Z" />
 
   <!-- P -->
-  <path fill="white" fill-rule="evenodd" d="
+  <path fill-rule="evenodd" d="
     M 667,577
     L 692,577
     C 715,577 715,612 692,612
@@ -131,7 +145,7 @@
     Z" />
 
   <!-- P -->
-  <path fill="white" fill-rule="evenodd" d="
+  <path fill-rule="evenodd" d="
     M 721,577
     L 746,577
     C 769,577 769,612 746,612
@@ -147,7 +161,7 @@
     Z" />
 
   <!-- E -->
-  <path fill="white" d="
+  <path d="
     M 774,577
     L 811,577
     L 811,588
@@ -163,7 +177,7 @@
     Z" />
 
   <!-- R -->
-  <path fill="white" fill-rule="evenodd" d="
+  <path fill-rule="evenodd" d="
     M 824,577
     L 851,577
     C 862,577 877,600 855,610
