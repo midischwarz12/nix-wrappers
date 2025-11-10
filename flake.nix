@@ -5,11 +5,6 @@
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.xz";
     flake-parts.url = "github:hercules-ci/flake-parts";
-
-    dix = {
-      url = "github:bloxx12/dix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =

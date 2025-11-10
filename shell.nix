@@ -23,7 +23,7 @@ mkShellNoCC {
 
     # nix diffing
     nix-diff
-    inputs'.dix.packages.default
+    dix
 
     # misc nix
     manix
