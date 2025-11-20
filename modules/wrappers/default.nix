@@ -93,7 +93,7 @@
               description = "Output derivation containing the wrapper of the package.";
               readOnly = true;
               default = pkgs.symlinkJoin {
-                inherit (config) name;
+                inherit (config) name passthru;
                 paths = [ config.basePackage ] ++ config.extraPackages;
                 nativeBuildInputs = [ pkgs.makeWrapper ];
                 postBuild =
@@ -176,6 +176,11 @@
               type = attrsOf environmentType;
               default = { };
               description = "Manage the wrapper's environment variables.";
+            };
+
+            passthru = mkOption {
+              type = lib.types.attrs;
+              default = {};
             };
           };
         }
