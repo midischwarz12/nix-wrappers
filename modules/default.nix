@@ -12,6 +12,6 @@ let
 
   modules = ls (self + "/modules");
 
-  genModule = module: import (self + "/modules/${module}") args;
+  genModule = module: import (self + "/modules/${module}");
 in
 lib.genAttrs modules genModule
