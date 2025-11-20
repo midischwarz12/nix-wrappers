@@ -2,10 +2,6 @@
 # Copyright (c) 2025 midischwarz12
 
 {
-  self,
-  ...
-}:
-{
   lib,
   config,
   ...
@@ -16,7 +12,7 @@ let
   inherit (lib.modules) mkIf;
 in
 {
-  imports = [ self.nixosModules.wrapper ];
+  imports = [ ../wrappers ];
 
   config =
     let
