@@ -143,7 +143,7 @@
                           "";
                     in
                     acc + ''
-                      wrapProgram $out/bin/${exe.name} \
+                      makeWrapper $out/bin/${exe.name} $out/bin/.${exe.name}-wrapper-base \
                         ${optionalString (exe.value.directory != null) "--chdir ${exe.value.directory}"} \
                         ${foldl' (a: x: "${a} --run ${x}") "" exe.value.preRun} \
                         ${foldl' (a: x: "${a} --add-flag ${x}") "" exe.value.args.prefix} \
