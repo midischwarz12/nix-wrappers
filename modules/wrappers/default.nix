@@ -67,41 +67,49 @@
         };
       };
 
-      executableType = submodule {
-        options = {
-          directory = mkOption {
-            type = nullOr path;
-            default = null;
-            description = "Change the directory of the package's environment.";
-          };
-
-          preRun = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "Commands to run before the execution of the program";
-          };
-
-          args = {
-            prefix = mkOption {
-              type = listOf str;
-              default = [ ];
-              description = "Arguments to prepend to the beginning of the wrapped program's arguments.";
+      executableType = submodule (
+        { name, ... }:
+        {
+          options = {
+            name = mkOption {
+              type = str;
+              default = name;
             };
 
-            suffix = mkOption {
+            directory = mkOption {
+              type = nullOr path;
+              default = null;
+              description = "Change the directory of the package's environment.";
+            };
+
+            preRun = mkOption {
               type = listOf str;
               default = [ ];
-              description = "Arguments to append to the end of the wrapped program's arguments.";
+              description = "Commands to run before the execution of the program";
+            };
+
+            args = {
+              prefix = mkOption {
+                type = listOf str;
+                default = [ ];
+                description = "Arguments to prepend to the beginning of the wrapped program's arguments.";
+              };
+
+              suffix = mkOption {
+                type = listOf str;
+                default = [ ];
+                description = "Arguments to append to the end of the wrapped program's arguments.";
+              };
+            };
+
+            environment = mkOption {
+              type = attrsOf environmentType;
+              default = { };
+              description = "Manage the wrapper's environment variables.";
             };
           };
-
-          environment = mkOption {
-            type = attrsOf environmentType;
-            default = { };
-            description = "Manage the wrapper's environment variables.";
-          };
-        };
-      };
+        }
+      );
 
       wrapperType = submodule (
         { config, name, ... }:
@@ -143,7 +151,13 @@
                           "";
                     in
                     acc + ''
-                      makeWrapper $out/bin/${exe.name} $out/bin/.${exe.name}-wrapper-base \
+                      mv \
+                        $out/bin/${exe.name} \
+                        $out/bin/.${exe.name}-wrapper-base
+                      makeWrapper \
+                        $out/bin/.${exe.name}-wrapper-base \
+                        $out/bin/${exe.value.name} \
+                        --argv0 ${exe.value.name} \
                         ${optionalString (exe.value.directory != null) "--chdir ${exe.value.directory}"} \
                         ${foldl' (a: x: "${a} --run ${x}") "" exe.value.preRun} \
                         ${foldl' (a: x: "${a} --add-flag ${x}") "" exe.value.args.prefix} \
