@@ -14,6 +14,7 @@
       inherit (lib.options) mkOption mkEnableOption;
       inherit (lib.strings) optionalString;
       inherit (lib.types)
+        attrs
         attrsOf
         bool
         listOf
@@ -24,6 +25,7 @@
         submodule
         ;
       inherit (builtins) foldl';
+      inherit (pkgs) symlinkJoin;
 
       environmentType = submodule {
         options = {
@@ -65,65 +67,89 @@
         };
       };
 
+      executableType = submodule {
+        options = {
+          directory = mkOption {
+            type = nullOr path;
+            default = null;
+            description = "Change the directory of the package's environment.";
+          };
+
+          preRun = mkOption {
+            type = listOf str;
+            default = [ ];
+            description = "Commands to run before the execution of the program";
+          };
+
+          args = {
+            prefix = mkOption {
+              type = listOf str;
+              default = [ ];
+              description = "Arguments to prepend to the beginning of the wrapped program's arguments.";
+            };
+
+            suffix = mkOption {
+              type = listOf str;
+              default = [ ];
+              description = "Arguments to append to the end of the wrapped program's arguments.";
+            };
+          };
+
+          environment = mkOption {
+            type = attrsOf environmentType;
+            default = { };
+            description = "Manage the wrapper's environment variables.";
+          };
+        };
+      };
+
       wrapperType = submodule (
-        { config, ... }:
+        { config, name, ... }:
         {
           options = {
             basePackage = mkOption {
               type = package;
-              description = "Package being wrapped";
-            };
-
-            name = mkOption {
-              type = str;
-              description = "Package name";
-              default = "${config.basePackage.name}-wrapped";
-            };
-
-            executable = mkOption {
-              type = str;
-              description = "File to be executed";
-
-              # Assuming for most packages, the executable is the name of the package
-              default = config.basePackage.pname;
+              default = pkgs.${name};
             };
 
             finalPackage = mkOption {
               type = package;
               description = "Output derivation containing the wrapper of the package.";
               readOnly = true;
-              default = pkgs.symlinkJoin {
-                inherit (config) name passthru;
+              default = symlinkJoin {
+                inherit name;
+                inherit (config) passthru;
                 paths = [ config.basePackage ] ++ config.extraPackages;
                 nativeBuildInputs = [ pkgs.makeWrapper ];
                 postBuild =
-                  let
-                    envPairs = attrsToList config.environment;
+                  foldl' (acc: exe:
+                    let
+                      envPairs = attrsToList exe.value.environment;
 
-                    listToSepString = delimiter: xs: foldl' (a: x: "${a}${delimiter}${x}") "" xs;
-                    envFlag =
-                      n: v:
-                      if (v.value != "") then
-                        "--set ${n} ${v.value}"
-                      else if (v.default != "") then
-                        "--set-default ${n} ${v.default}"
-                      else if v.unset then
-                        "--unset ${n}"
-                      else if (v.prefix != [ ]) then
-                        "--prefix ${n} ${v.delimiter} ${listToSepString v.delimiter v.prefix}"
-                      else if (v.suffix != [ ]) then
-                        "--suffix ${n} ${v.delimiter} ${listToSepString v.delimiter v.suffix}"
-                      else
-                        "";
-                  in
-                  ''
-                    wrapProgram $out/bin/${config.executable} \
-                      ${optionalString (config.directory != null) "--chdir ${config.directory}"} \
-                      ${foldl' (a: x: "${a} --run ${x}") "" config.run} \
-                      ${foldl' (a: x: "${a} --add-flag ${x}") "" config.args.prefix} \
-                      ${foldl' (a: x: "${a} --append-flag ${x}") "" config.args.suffix} \
-                      ${foldl' (a: x: "${a} ${envFlag x.name x.value}") "" envPairs} \
-                  '';
+                      listToSepString = delimiter: xs: foldl' (a: x: "${a}${delimiter}${x}") "" xs;
+                      envFlag =
+                        n: v:
+                        if (v.value != "") then
+                          "--set ${n} ${v.value}"
+                        else if (v.default != "") then
+                          "--set-default ${n} ${v.default}"
+                        else if v.unset then
+                          "--unset ${n}"
+                        else if (v.prefix != [ ]) then
+                          "--prefix ${n} ${v.delimiter} ${listToSepString v.delimiter v.prefix}"
+                        else if (v.suffix != [ ]) then
+                          "--suffix ${n} ${v.delimiter} ${listToSepString v.delimiter v.suffix}"
+                        else
+                          "";
+                    in
+                    acc + ''
+                      wrapProgram $out/bin/${exe.name} \
+                        ${optionalString (exe.value.directory != null) "--chdir ${exe.value.directory}"} \
+                        ${foldl' (a: x: "${a} --run ${x}") "" exe.value.preRun} \
+                        ${foldl' (a: x: "${a} --add-flag ${x}") "" exe.value.args.prefix} \
+                        ${foldl' (a: x: "${a} --append-flag ${x}") "" exe.value.args.suffix} \
+                        ${foldl' (a: x: "${a} ${envFlag x.name x.value}") "" envPairs} \
+                    '') "" (attrsToList config.executables);
               };
             };
 
@@ -140,46 +166,19 @@
             # No-op when not on NixOS
             systemWide = mkEnableOption "system-wide installation";
 
-            directory = mkOption {
-              type = nullOr path;
-              default = null;
-              description = "Change the directory of the package's environment.";
-            };
-
             extraPackages = mkOption {
               type = listOf package;
               default = [ ];
               description = "Additional packages needed in the wrapper's environment $PATH.";
             };
 
-            run = mkOption {
-              type = listOf str;
-              default = [ ];
-              description = "Commands to run before the execution of the program";
-            };
-
-            args = {
-              prefix = mkOption {
-                type = listOf str;
-                default = [ ];
-                description = "Arguments to prepend to the beginning of the wrapped program's arguments.";
-              };
-
-              suffix = mkOption {
-                type = listOf str;
-                default = [ ];
-                description = "Arguments to append to the end of the wrapped program's arguments.";
-              };
-            };
-
-            environment = mkOption {
-              type = attrsOf environmentType;
-              default = { };
-              description = "Manage the wrapper's environment variables.";
-            };
-
             passthru = mkOption {
-              type = lib.types.attrs;
+              type = attrs;
+              default = { };
+            };
+
+            executables = mkOption {
+              type = attrsOf executableType;
               default = {};
             };
           };
@@ -189,9 +188,7 @@
     {
       wrappers = mkOption {
         type = attrsOf wrapperType;
-        default = { };
-        example = { };
-        description = "Wrappers to be managed by Hjem.";
+        default = {};
       };
     };
 }
