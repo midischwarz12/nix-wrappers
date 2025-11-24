@@ -40,8 +40,8 @@ EOF
     echo "$usage" >&2
 }
 
-source @out@/libexe/die.sh
-source @out@/libexe/make-wrapper.sh
+source @out@/libexec/die.sh
+source @out@/libexec/make-wrapper.sh
 
 if [[ $# -lt 2 ]]
 then
