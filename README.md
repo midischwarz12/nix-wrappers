@@ -240,18 +240,22 @@ In your NixOS configuration, add the following:
 ```nix
 {
   wrappers = {
-    # Creates a wrapper around `foo` with the environment variable
-    # `FOO_CONFIG` set to a nix-store path.
-    "foo" = {
-      basePackage = pkgs.foo;
-      environment."FOO_CONFIG".value = self + "/path/to/foo/config.toml";
+    # Creates a wrapper around the `foo` package
+    foo = {
+      # Specifically, wrap the binary `foo` inside package `foo`
+      executables.foo = {
+        # Set an environment variable in the wrapper
+        environment."FOO_CONFIG".value = self + "/path/to/foo/config.toml";
+      };
     };
 
-    # Creates a wrapper around `bar` with the command line flag `--config`
-    # pointing to a path in the nix-store.
-    "bar" = {
-      basePackage = pkgs.bar;
-      args.suffix = [ "--config ${self + "/path/to/bar/config.json"}" ];
+    # Creates a wrapper around the `bar` package
+    bar = {
+      # Specifically, wrap the binary `bar` inside package `bar`
+      executables.bar = {
+        # Set an argument to be ran with the command
+        args.suffix = [ "--config ${self + "/path/to/bar/config.json"}" ];
+      };
     };
   };
 }
