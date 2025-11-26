@@ -171,12 +171,22 @@
                     substitutions = ''
                       find $out -type l | while read link; do
                         target="$(readlink -f "$link")"
-                        if [ -f "$target" ] && file -b --mime-encoding "$target" | grep -q "^us-ascii\|^utf-8\|^utf-16be\|^utf-16le\|^utf-32be\|^utf-32le"; then
+                        if [ -f "$target" ] \
+                        && file -b --mime-encoding "$target" | grep -q "^us-ascii\|^utf-8\|^utf-16be\|^utf-16le\|^utf-32be\|^utf-32le" \
+                        && grep -q "${config.basePackage}" "$target"; then
                           case "$target" in
                             ${config.basePackage}/*)
+                              is_exec=false
+                              [ -x "$link" ] && is_exec=true
+
                               rm "$link"
+
                               substitute "$target" "$link" \
                                 --replace-quiet "${config.basePackage}" "$out"
+
+                              if $is_exec; then
+                                chmod +x "$link"
+                              fi
                           esac
                         fi
                       done
