@@ -4,9 +4,25 @@
 {
   pkgs,
   lib,
+  config,
   ...
 }:
 
+let
+  cfg = config.wrappers;
+
+  inherit (lib.attrsets)
+    attrValues
+    filterAttrs
+    genAttrs
+    mapAttrs
+    ;
+  inherit (lib.lists)
+    unique
+    elem;
+  inherit (builtins) foldl';
+  inherit (lib) mkMerge optionalAttrs;
+in
 {
   options =
     let
@@ -24,7 +40,6 @@
         str
         submodule
         ;
-      inherit (builtins) foldl';
       inherit (pkgs) symlinkJoin;
 
       environmentType = submodule {
@@ -234,4 +249,21 @@
         default = {};
       };
     };
+
+  config = mkMerge [
+    (optionalAttrs ((config.system or {}) ? nixos) {
+      environment.systemPackages = attrValues (
+        mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
+      );
+
+      users.users =
+        let
+          users = unique (foldl' (acc: x: acc ++ x) [ ] (attrValues (mapAttrs (_: v: v.users) cfg)));
+          userPackages = user: {
+            packages = attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: elem user v.users) cfg));
+          };
+        in
+        genAttrs users userPackages;
+    })
+  ];
 }
