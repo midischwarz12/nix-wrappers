@@ -13,6 +13,7 @@
       inherit (lib.attrsets) attrsToList;
       inherit (lib.options) mkOption mkEnableOption;
       inherit (lib.strings) optionalString;
+      inherit (lib.lists) optionals;
       inherit (lib.types)
         attrs
         attrsOf
@@ -26,6 +27,30 @@
         ;
       inherit (builtins) foldl';
       inherit (pkgs) symlinkJoin;
+
+      srcPath = ../../src;
+
+      nativeWrapperPkg = pkgs.stdenv.mkDerivation {
+        name = "nix-wrappers-native";
+        src = srcPath;
+
+        dontConfigure = true;
+        dontBuild = true;
+
+        installPhase = ''
+          mkdir -p $out/bin
+
+          substitute $src/makeWrapperNative.sh $out/bin/makeWrapperNative \
+            --subst-var-by out $out \
+            --subst-var-by bash ${pkgs.bash}/bin/bash \
+            --subst-var-by python ${pkgs.python3}/bin/python3 \
+            --subst-var-by runner $out/bin/wrapper-runner
+
+          ${pkgs.stdenv.cc}/bin/cc -O2 -std=c11 $src/wrapper_runner.c -o $out/bin/wrapper-runner
+
+          chmod +x $out/bin/makeWrapperNative
+        '';
+      };
 
       environmentType = submodule {
         options = {
@@ -120,6 +145,20 @@
               default = pkgs.${name};
             };
 
+            useNativeWrapper = mkEnableOption "build wrappers with the compiled native generator instead of the shell-based makeWrapper";
+
+            preWrapRun = mkOption {
+              type = listOf str;
+              default = [ ];
+              description = "Commands to run before wrapper generation (executed in postBuild).";
+            };
+
+            postWrapRun = mkOption {
+              type = listOf str;
+              default = [ ];
+              description = "Commands to run after wrapper generation (executed in postBuild).";
+            };
+
             finalPackage = mkOption {
               type = package;
               description = "Output derivation containing the wrapper of the package.";
@@ -129,10 +168,18 @@
                 inherit (config) passthru;
 
                 paths = [ config.basePackage ] ++ config.extraPackages;
-                nativeBuildInputs = [ pkgs.makeWrapper ];
+                nativeBuildInputs = [ pkgs.makeWrapper ] ++ optionals config.useNativeWrapper [ nativeWrapperPkg ];
 
                 postBuild =
                   let
+                    makeWrapperCmd =
+                      if config.useNativeWrapper then
+                        "${nativeWrapperPkg}/bin/makeWrapperNative"
+                      else
+                        "makeWrapper";
+
+                    runCommands = cmds: foldl' (acc: cmd: acc + cmd + "\n") "" cmds;
+
                     wrappers = foldl' (acc: exe:
                       let
                         envPairs = attrsToList exe.value.environment;
@@ -157,7 +204,7 @@
                         mv \
                           $out/bin/${exe.name} \
                           $out/bin/.${exe.name}-wrapper-base
-                        makeWrapper \
+                        ${makeWrapperCmd} \
                           $out/bin/.${exe.name}-wrapper-base \
                           $out/bin/${exe.value.name} \
                           --argv0 ${exe.value.name} \
@@ -192,7 +239,10 @@
                       done
                     '';
                   in
-                  wrappers + substitutions;
+                  runCommands config.preWrapRun
+                  + wrappers
+                  + substitutions
+                  + runCommands config.postWrapRun;
               };
             };
 

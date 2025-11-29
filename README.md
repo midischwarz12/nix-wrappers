@@ -38,6 +38,7 @@ In rare situations like these, we recommend using:
 
 On a per package basis, Nix-Wrappers can:
 - Change the directory of the package's environment.
+- Run arbitrary commands before and after wrapper generation.
 - Set commands to run immediately after the program's execution as a part of the
     package environment.
 - Prepend and/or append arguments to be ran as a part of the package
@@ -46,6 +47,8 @@ On a per package basis, Nix-Wrappers can:
 - Unset environment variables of the package's environment.
 - Add values as prefixes and/or suffixes to the delimited list environment
     variables of the package's environment.
+- Build either shell-script wrappers or compiled native wrappers (no Bash
+    interpreter on hot path) using `makeWrapperNative` / `--native`.
 
 ## Getting Started
 
@@ -233,6 +236,21 @@ Where args are:
 - `--suffix-contents`
 </details>
 
+<details>
+<summary>nix-wrappers (friendlier front-end)</summary>
+
+```console
+$ nix-wrappers make --exec /path/to/bin/foo --out /tmp/foo-wrapper --set FOO bar --native
+$ nix-wrappers wrap --exec /path/to/bin/bar --append-flag "--help"
+```
+
+- `make` creates a new wrapper at `--out` (use `--native` to build the compiled wrapper).
+- `wrap` replaces an existing executable in-place (shell-based, matches `wrapProgram`).
+
+All other options are forwarded to the underlying tools.
+
+</details>
+
 ### NixOS Module
 
 In your NixOS configuration, add the following:
@@ -242,6 +260,13 @@ In your NixOS configuration, add the following:
   wrappers = {
     # Creates a wrapper around the `foo` package
     foo = {
+      # Optional hooks run during wrapper creation
+      preWrapRun = [ "echo building foo wrapper" ];
+      postWrapRun = [ "echo done" ];
+
+      # Use compiled (non-Bash) wrapper binaries
+      useNativeWrapper = true;
+
       # Specifically, wrap the binary `foo` inside package `foo`
       executables.foo = {
         # Set an environment variable in the wrapper
@@ -286,8 +311,20 @@ Or to add a wrapper to a package list:
 
 Full documentation will be generated for all the available options soonTM.
 
+### Library helpers
+
+When importing this flake as an input, the `lib` output now exposes helpers to
+evaluate the wrappers module without wiring up the full module system:
+
+- `lib.evalWrappers { pkgs; wrappers = { ... }; }` → full module evaluation result
+    (config + options).
+- `lib.mkWrappers { pkgs; wrappers = { ... }; }` → attrset of derivations
+    (`finalPackage`) keyed by wrapper name.
+- `lib.mkWrapper { pkgs; name = "foo"; wrapper = { ... }; }` → single wrapper
+    derivation.
+
 ## Roadmap
 
 - Thorough documentation with examples
 - More installation methods
-- Nix function for return wrappers
+- Additional tests and benchmarking for native wrappers
