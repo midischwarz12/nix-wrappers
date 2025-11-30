@@ -9,7 +9,6 @@
 
 let
   cfg = config.wrappers;
-  inherit (lib.modules) mkIf;
 in
 {
   imports = [ ../wrappers ];
@@ -22,24 +21,23 @@ in
         genAttrs
         mapAttrs
         ;
-      inherit (lib.lists) elem;
+      inherit (lib.lists)
+        unique
+        elem;
       inherit (builtins) foldl';
     in
     {
-      environment.systemPackages =
-        let
-          packages = attrValues (
-            mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
-          );
-        in
-        mkIf (packages != []) packages;
+      environment.systemPackages = attrValues (
+        mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: v.systemWide) cfg)
+      );
 
       users.users =
         let
-          users = foldl' (acc: x: acc ++ x) [ ] (attrValues (mapAttrs (_: v: v.users) cfg));
-          userPackages =
-            user: attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: elem user v.user) cfg));
+          users = unique (foldl' (acc: x: acc ++ x) [ ] (attrValues (mapAttrs (_: v: v.users) cfg)));
+          userPackages = user: {
+            packages = attrValues (mapAttrs (_: v: v.finalPackage) (filterAttrs (_: v: elem user v.users) cfg));
+          };
         in
-        mkIf (users != []) (genAttrs users userPackages);
+        genAttrs users userPackages;
     };
 }
