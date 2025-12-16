@@ -4,77 +4,66 @@
 {
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.xz";
-    flake-parts.url = "github:hercules-ci/flake-parts";
+    systems.url = "github:nix-values/default";
   };
 
   outputs =
     inputs@{
       self,
       nixpkgs,
-      flake-parts,
+      systems,
       ...
     }:
-    flake-parts.lib.mkFlake { inherit inputs; } (top: {
-      debug = true;
+    let
+      inherit (nixpkgs.lib) genAttrs;
 
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
+      ls = path: builtins.attrNames (builtins.readDir path);
+      realPath = pathStr: self + "/${pathStr}";
 
-      perSystem =
-        {
-          pkgs,
-          lib,
-          inputs',
-          self',
-          ...
-        }:
-        let
-          everything = {
-            inherit
-              inputs'
-              inputs
-              self'
-              self
-              top
-              lib
-              pkgs
-              ;
-          };
-        in
-        {
-          packages = import (self + "/packages") everything;
-          checks = import (self + "/tests") everything;
-          devShells.default = pkgs.callPackage (self + "/shell.nix") { inherit inputs'; };
+      forAllSystems = genAttrs (import systems);
 
-          formatter = pkgs.writeShellApplication {
-            name = "lint";
-            runtimeInputs = with pkgs; [
-              nixfmt-rfc-style
-              deadnix
-              statix
-              shellcheck
-              fd
-            ];
-            text = ''
-              fd '.*\.nix' . -x statix fix -- {} \; -x deadnix -e -- {} \; -x nixfmt {} \;
-              fd '.*\.sh' . -x shellcheck {} \;
-            '';
-          };
-        };
-
-      flake = {
-        lib = import (self + "/lib") {
-          inherit (nixpkgs) lib;
-        };
-
-        nixosModules = import (self + "/modules") {
-          inherit self;
-          inherit (nixpkgs) lib;
-        };
+      genArgs = system: {
+        inherit self inputs;
+        inherit (nixpkgs) lib;
+        pkgs = nixpkgs.legacyPackages.${system};
       };
-    });
+
+      forAllSystemsWithArgs = f: forAllSystems (system: f (genArgs system));
+
+      # auto-generates outputs based on directories in given path string
+      genOutput =
+        pathStr: f:
+        (forAllSystemsWithArgs (
+          args: genAttrs (ls (realPath pathStr)) (dir: f (realPath "${pathStr}/${dir}") args)
+        ));
+    in
+    {
+      packages = genOutput "packages" (path: args: args.pkgs.callPackage path args);
+
+      nixosModules = genAttrs
+        (ls (realPath "modules"))
+        (module: import (realPath "modules/${module}"));
+
+      devShells = forAllSystemsWithArgs (args: {
+        default = args.pkgs.callPackage (realPath "shell.nix") { };
+      });
+
+      formatter = forAllSystemsWithArgs (
+        args:
+        args.pkgs.writeShellApplication {
+          name = "lint";
+          runtimeInputs = with args.pkgs; [
+            nixfmt-rfc-style
+            deadnix
+            statix
+            shellcheck
+            fd
+          ];
+          text = ''
+            fd '.*\.nix' . -x statix fix -- {} \; -x deadnix -e -- {} \; -x nixfmt {} \;
+            fd '.*\.sh' . -x shellcheck {} \;
+          '';
+        }
+      );
+    };
 }
