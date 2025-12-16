@@ -23,7 +23,8 @@ in
         ;
       inherit (lib.lists)
         unique
-        elem;
+        elem
+        ;
       inherit (builtins) foldl';
     in
     {

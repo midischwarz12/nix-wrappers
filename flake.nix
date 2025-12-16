@@ -40,9 +40,7 @@
     {
       packages = genOutput "packages" (path: args: args.pkgs.callPackage path args);
 
-      nixosModules = genAttrs
-        (ls (realPath "modules"))
-        (module: import (realPath "modules/${module}"));
+      nixosModules = genAttrs (ls (realPath "modules")) (module: import (realPath "modules/${module}"));
 
       devShells = forAllSystemsWithArgs (args: {
         default = args.pkgs.callPackage (realPath "shell.nix") { };

@@ -133,7 +133,8 @@
 
                 postBuild =
                   let
-                    wrappers = foldl' (acc: exe:
+                    wrappers = foldl' (
+                      acc: exe:
                       let
                         envPairs = attrsToList exe.value.environment;
 
@@ -153,7 +154,8 @@
                           else
                             "";
                       in
-                      acc + ''
+                      acc
+                      + ''
                         mv \
                           $out/bin/${exe.name} \
                           $out/bin/.${exe.name}-wrapper-base
@@ -166,7 +168,8 @@
                           ${foldl' (a: x: "${a} --add-flag ${x}") "" exe.value.args.prefix} \
                           ${foldl' (a: x: "${a} --append-flag ${x}") "" exe.value.args.suffix} \
                           ${foldl' (a: x: "${a} ${envFlag x.name x.value}") "" envPairs}
-                      '') "" (attrsToList config.executables);
+                      ''
+                    ) "" (attrsToList config.executables);
 
                     substitutions = ''
                       find $out -type l | while read link; do
@@ -222,7 +225,7 @@
 
             executables = mkOption {
               type = attrsOf executableType;
-              default = {};
+              default = { };
             };
           };
         }
@@ -231,7 +234,7 @@
     {
       wrappers = mkOption {
         type = attrsOf wrapperType;
-        default = {};
+        default = { };
       };
     };
 }
