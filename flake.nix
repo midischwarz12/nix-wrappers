@@ -22,35 +22,32 @@
 
       forAllSystems = genAttrs (import systems);
 
-      genArgs = system: {
-        inherit self inputs;
-        inherit (nixpkgs) lib;
-        pkgs = nixpkgs.legacyPackages.${system};
-      };
-
-      forAllSystemsWithArgs = f: forAllSystems (system: f (genArgs system));
+      forAllSystemsWithPkgs = f: forAllSystems (system: f nixpkgs.legacyPackages.${system});
 
       # auto-generates outputs based on directories in given path string
-      genOutput =
-        pathStr: f:
-        (forAllSystemsWithArgs (
-          args: genAttrs (ls (realPath pathStr)) (dir: f (realPath "${pathStr}/${dir}") args)
-        ));
+      forAllNames =
+        pathStr: f: genAttrs (ls (realPath pathStr)) (name: f (realPath "${pathStr}/${name}"));
+
+      forAllSystemsNames = pathStr: f: forAllSystemsWithPkgs (pkgs: forAllNames pathStr (f pkgs));
     in
     {
-      packages = genOutput "packages" (path: args: args.pkgs.callPackage path args);
+      packages = forAllSystemsNames "packages" (
+        pkgs: path: pkgs.callPackage path { inherit inputs self; }
+      );
 
-      nixosModules = genAttrs (ls (realPath "modules")) (module: import (realPath "modules/${module}"));
-
-      devShells = forAllSystemsWithArgs (args: {
-        default = args.pkgs.callPackage (realPath "shell.nix") { };
+      nixosModules = forAllNames "modules" (path: {
+        imports = [ path ];
       });
 
-      formatter = forAllSystemsWithArgs (
-        args:
-        args.pkgs.writeShellApplication {
+      devShells = forAllSystemsWithPkgs (pkgs: {
+        default = pkgs.callPackage (realPath "shell.nix") { };
+      });
+
+      formatter = forAllSystemsWithPkgs (
+        pkgs:
+        pkgs.writeShellApplication {
           name = "lint";
-          runtimeInputs = with args.pkgs; [
+          runtimeInputs = with pkgs; [
             nixfmt-rfc-style
             deadnix
             statix
