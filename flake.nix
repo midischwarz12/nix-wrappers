@@ -39,6 +39,8 @@
         imports = [ path ];
       });
 
+      darwinModules.default.imports = [ (realPath "modules/system-wrappers") ];
+
       devShells = forAllSystemsWithPkgs (pkgs: {
         default = pkgs.callPackage (realPath "shell.nix") { };
       });
