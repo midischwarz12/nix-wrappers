@@ -199,7 +199,7 @@
               };
             };
 
-            # No-op when not on NixOS
+            # Requires system-wrappers module
             users = mkOption {
               type = listOf str;
               default = [ ];
@@ -209,7 +209,7 @@
               ];
             };
 
-            # No-op when not on NixOS
+            # Requires system-wrappers module
             systemWide = mkEnableOption "system-wide installation";
 
             extraPackages = mkOption {
