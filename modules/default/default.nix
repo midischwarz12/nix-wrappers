@@ -4,5 +4,5 @@
 _:
 
 {
-  imports = [ ../system-wrappers ];
+  imports = [ ../wrappers ];
 }
