@@ -35,6 +35,67 @@
         pkgs: path: pkgs.callPackage path { inherit inputs self; }
       );
 
+      checks = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          wrapperPackage = self.packages.${system}.default;
+          moduleWrapper =
+            (nixpkgs.lib.evalModules {
+              specialArgs = { inherit pkgs; };
+              modules = [
+                (realPath "modules/default")
+                {
+                  wrappers.hello = {
+                    basePackage = pkgs.hello;
+                    executables.hello.environment.NIX_WRAPPERS_SMOKE.value = "1";
+                  };
+                }
+              ];
+            }).config.wrappers.hello.finalPackage;
+        in
+        {
+          inherit (self.packages.${system}) default;
+
+          shellcheck =
+            pkgs.runCommand "nix-wrappers-shellcheck" { nativeBuildInputs = [ pkgs.shellcheck ]; }
+              ''
+                find ${realPath "src"} -name '*.sh' -print0 \
+                  | xargs -0 shellcheck -s bash -e SC1008,SC1091,SC2239
+                touch $out
+              '';
+
+          cli-wrapper-smoke =
+            pkgs.runCommand "nix-wrappers-cli-wrapper-smoke"
+              {
+                nativeBuildInputs = [
+                  wrapperPackage
+                  pkgs.gnugrep
+                ];
+              }
+              ''
+                mkdir -p bin
+                cp ${pkgs.coreutils}/bin/printf bin/printf
+                wrapProgram "$PWD/bin/printf" --add-flag 'wrapped\n'
+                "$PWD/bin/printf" | grep -qx wrapped
+                touch $out
+              '';
+
+          module-wrapper-smoke =
+            pkgs.runCommand "nix-wrappers-module-wrapper-smoke"
+              {
+                nativeBuildInputs = [
+                  moduleWrapper
+                  pkgs.gnugrep
+                ];
+              }
+              ''
+                hello | grep -qx 'Hello, world!'
+                touch $out
+              '';
+        }
+      );
+
       nixosModules = forAllNames "modules" (path: {
         imports = [ path ];
       });

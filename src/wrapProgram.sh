@@ -44,4 +44,4 @@ then
     exit 1
 fi
 
-wrapProgram $@
+wrapProgram "$@"
